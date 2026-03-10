@@ -17,7 +17,7 @@ pomPostProcess := { (node: XmlNode) =>
   }).transform(node).head
 }
 
-version := "spark3.3-1.19.7"
+version := "spark3.5.2-UC"
 
 crossPaths := false
 ThisBuild / scalaVersion := "2.12.15"
@@ -32,8 +32,8 @@ libraryDependencies += "com.fasterxml.jackson.module" %% "jackson-module-scala" 
 libraryDependencies += "com.fasterxml.jackson.core" % "jackson-core" % "2.13.4"
 libraryDependencies += "com.fasterxml.jackson.core" % "jackson-annotations" % "2.13.4"
 libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.12.0"  % "provided"
-libraryDependencies += "org.apache.spark" %% "spark-sql" % "3.3.0" % "provided"
-libraryDependencies += "org.apache.spark" %% "spark-core" % "3.3.0" % "provided"
+libraryDependencies += "org.apache.spark" %% "spark-sql" % "3.5.2" % "provided"
+libraryDependencies += "org.apache.spark" %% "spark-core" % "3.5.2" % "provided"
 libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.13" % "provided"
 libraryDependencies += "com.google.guava" % "guava" % "14.0.1" % "provided"
 libraryDependencies += "commons-io" % "commons-io" % "2.11.0" % "provided"
