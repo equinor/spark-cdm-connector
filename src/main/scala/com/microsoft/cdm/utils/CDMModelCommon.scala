@@ -45,7 +45,14 @@ class CDMModelCommon (storage: String,
   SparkCDMLogger.log(Level.INFO, "Path for ADLSAdapter: " + storage + rootPath, logger)
 
   val adlsAdapter = CdmAdapterProvider(storage, rootPath, auth, tokenProvider)
-  cdmCorpus.getStorage.mount(Constants.SPARK_NAMESPACE, adlsAdapter)
+  // If the model.json file has a custom name, wrap the adapter to redirect CDM SDK reads
+  private val needsModelJsonRedirect = !manifestFileName.contains(".manifest.cdm.json") && !manifestFileName.endsWith("model.json")
+  val mountedAdapter: StorageAdapterBase = if (needsModelJsonRedirect) {
+    new ModelJsonRedirectAdapter(adlsAdapter, manifestFileName)
+  } else {
+    adlsAdapter
+  }
+  cdmCorpus.getStorage.mount(Constants.SPARK_NAMESPACE, mountedAdapter)
 
 
   val cdmSourceAdapter = new ResourceAdapter
@@ -116,13 +123,18 @@ class CDMModelCommon (storage: String,
   // set the same secret/token to all the Adls Adapter definitions, since we are using a single ADLS account.
   def setAuthMechanismTOAllNamespace() = {
     cdmCorpus.getStorage.getNamespaceAdapters.values.asScala.foreach({ case (value: StorageAdapterBase) =>
-      if(value.isInstanceOf[AdlsAdapter]) {
+      // Unwrap ModelJsonRedirectAdapter to get the underlying AdlsAdapter
+      val adapter = value match {
+        case redirect: ModelJsonRedirectAdapter => redirect.delegate
+        case other => other
+      }
+      if(adapter.isInstanceOf[AdlsAdapter]) {
         if (auth.getAuthType == CdmAuthType.Token.toString()) {
-          value.asInstanceOf[AdlsAdapter].setTokenProvider(tokenProvider.get)
+          adapter.asInstanceOf[AdlsAdapter].setTokenProvider(tokenProvider.get)
         } else if (auth.getAuthType == CdmAuthType.AppReg.toString()) {
-          value.asInstanceOf[AdlsAdapter].setSecret(auth.getAppKey)
+          adapter.asInstanceOf[AdlsAdapter].setSecret(auth.getAppKey)
         } else {
-          value.asInstanceOf[AdlsAdapter].setSasToken(auth.getSASToken)
+          adapter.asInstanceOf[AdlsAdapter].setSasToken(auth.getSASToken)
         }
       }
     })
@@ -267,7 +279,9 @@ class CDMModelCommon (storage: String,
     val fs = conf.getFileSystem()
     val path = URLDecoder.decode(manifestPath +  manifestFileName, "UTF-8")
     if(fs.exists(new Path(path))) {
-      cdmCorpus.fetchObjectAsync(manifestFileName).get().asInstanceOf[CdmManifestDefinition]
+      // Use "model.json" for CDM SDK format detection when redirect is active
+      val fetchName = if (needsModelJsonRedirect) "model.json" else manifestFileName
+      cdmCorpus.fetchObjectAsync(fetchName).get().asInstanceOf[CdmManifestDefinition]
     } else {
       null
     }

@@ -39,7 +39,7 @@ object Constants {
   var EXCEPTION_TEST = false
   var SUBMANIFEST_WITH_OVERWRITTEN_PARTITIONS =  "%s.rename.manifest.cdm.json"
   var MODE = ""
-  var MODEL_JSON = "model.json"
+  var MODEL_JSON = "model_custom.json"
   var KUSTO_ENABLED = true
   var SASTOKEN_CONF_SETTING = "com.microsoft.cdm.sastoken"
 
